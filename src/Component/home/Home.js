@@ -33,6 +33,8 @@ class Header extends React.Component {
       modalIsOpen: false, // is model open
 
       model_img_details: {}, // model image details
+
+      api_model: true, // is api model open
     };
   }
 
@@ -65,9 +67,6 @@ class Header extends React.Component {
   handleChange = (event) => {
     this.setState({ key_word: event.target.value });
 
-    //
-
-    //
     if (!event.target.value) {
       this.setState({ is_search: false });
 
@@ -127,7 +126,7 @@ class Header extends React.Component {
         sugg_list: false,
       });
 
-      // save
+      // save intio local storage
       searched_key_word.push(key_word);
 
       localStorage["key_word_search"] = JSON.stringify(searched_key_word);
@@ -249,6 +248,37 @@ class Header extends React.Component {
     this.setState({ modalIsOpen: false });
   };
 
+  close_api_Modal = () => {
+    this.setState({ api_model: false });
+  };
+
+  api_change = (event) => {
+    this.setState({ api_key: event.target.value });
+  };
+
+  api_model_open = () => {
+    this.setState({ api_model: true });
+  };
+
+  search_with_new_api_key = (event) => {
+    event.preventDefault();
+    this.setState({ api_model: false });
+    const { api_key } = this.state;
+    axios({
+      method: "GET",
+      url: `https://www.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=${api_key}&page=1&format=json&nojsoncallback=1`,
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((res) =>
+        this.setState({
+          photos: res.data.photos.photo,
+          current_page: res.data.photos.page,
+          total_page: res.data.photos.pages,
+        })
+      )
+      .catch((err) => alert(err));
+  };
+
   render() {
     const {
       photos,
@@ -257,6 +287,7 @@ class Header extends React.Component {
       sugg_list,
       modalIsOpen,
       model_img_details,
+      api_model,
     } = this.state;
     return (
       <div style={{ backgroundColor: "grey" }}>
@@ -283,7 +314,6 @@ class Header extends React.Component {
             </form>
           </div>
         </nav>
-
         <div className="paddingTop-5px">
           <div>
             <InfiniteScroll
@@ -331,7 +361,6 @@ class Header extends React.Component {
             </InfiniteScroll>
           </div>
         </div>
-
         <Modal
           isOpen={modalIsOpen}
           onRequestClose={this.closeModal}
@@ -351,6 +380,36 @@ class Header extends React.Component {
               <div className="text-center"> {model_img_details.title} </div>
             </div>
           ) : null}
+        </Modal>
+        <div className="d-flex  justify-content-around">
+          <h3>This api key may be expired. Enter your own API key</h3>
+          <button className="btn btn-success" onClick={this.api_model_open}>
+            Enter Api key
+          </button>
+        </div>
+
+        <Modal
+          isOpen={api_model}
+          onRequestClose={this.close_api_Modal}
+          style={customStyles}
+          contentLabel="Minimal Modal Example"
+        >
+          <button onClick={this.close_api_Modal}>Close</button>
+
+          <form>
+            <label>Enter API Key </label>
+            <br />
+            <br />
+            <input type="text" onChange={this.api_change} />
+            <br />
+            <br />
+            <button
+              className="btn btn-success"
+              onClick={this.search_with_new_api_key}
+            >
+              Submit
+            </button>
+          </form>
         </Modal>
       </div>
     );
